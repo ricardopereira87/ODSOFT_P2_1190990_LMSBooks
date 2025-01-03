@@ -88,9 +88,15 @@ pipeline {
         stage('Tag Previous Docker Image') {
             steps {
                 script {
-                    sh """
-                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:rollback
-                    """
+                    def imageExists = sh(script: "docker images -q ${IMAGE_NAME}:${IMAGE_TAG}", returnStdout: true).trim()
+                    
+                    if (imageExists) {
+                        sh """
+                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:rollback
+                        """
+                    } else {
+                        echo "Docker image ${IMAGE_NAME}:${IMAGE_TAG} not found, skipping tag step."
+                    }
                 }
             }
         }
