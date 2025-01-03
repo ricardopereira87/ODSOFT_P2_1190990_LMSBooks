@@ -3,8 +3,7 @@ pipeline {
 
     environment {
 
-        //MAVEN_HOME = '/opt/homebrew' // (MacOS)
-        MAVEN_HOME = '/usr/share/maven' // (Ubuntu)
+        DOCKER_REPO = '1190990/lmsbooks'
 
         GIT_REPO_URL = 'https://github.com/ricardopereira87/ODSOFT_P2_1190990_LMSBooks'  // Your Git repository URL
         GIT_BRANCH = 'main'  // Specify the branch to check out
@@ -44,16 +43,16 @@ pipeline {
             steps {
                 script {
                     sh """
-                        ${MAVEN_HOME}/bin/mvn clean install
+                        mvn clean install
                     """
                 }
             }
         }
-/*
+
         stage('Validate') {
             steps {
                 script {
-                    sh "'${MAVEN_HOME}/bin/mvn' validate"
+                    sh "mvn validate"
                 }
             }
         }
@@ -61,7 +60,7 @@ pipeline {
         stage('Compile') {
             steps {
                 script {
-                    sh "'${MAVEN_HOME}/bin/mvn' compile"
+                    sh "mvn compile"
                 }
             }
         }
@@ -70,9 +69,9 @@ pipeline {
             steps {
                 script {
                     // Run tests
-                    withEnv(["PATH+JDK=${JAVA_HOME}/bin"]) {
-                        sh "'${MAVEN_HOME}/bin/mvn' test"
-                    }
+                    //withEnv(["PATH+JDK=${JAVA_HOME}/bin"]) {
+                        sh "mvn test"
+                    //}
                 }
             }
         }
@@ -81,11 +80,21 @@ pipeline {
             steps {
                 script {
                     // Package the application
-                    sh "'${MAVEN_HOME}/bin/mvn' package"
+                    sh "mvn package -DskipTests"
                 }
             }
         }
-*/
+
+        stage('Tag Previous Docker Image') {
+            steps {
+                script {
+                    sh """
+                    docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:rollback
+                    """
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -96,27 +105,37 @@ pipeline {
             }
         }
 
+
         stage('Deploy with Docker Compose') {
             steps {
                 script {
                     sh """
 
                         if ! docker ps --filter "name=rabbitmq_in_lms_network" --format '{{.Names}}' | grep -q rabbitmq_in_lms_network; then
-                          docker compose -f docker-compose-rabbitmq.yml up -d
+                          docker-compose -f docker-compose-rabbitmq+postgres.yml up -d
                         else
-                          echo "RabbitMQ container already running."
-                        fi
-
-                        if ! docker ps --filter "name=postgres_in_lms_network" --format '{{.Names}}' | grep -q postgres_in_lms_network; then
-                          docker compose -f docker-compose-postgres.yml up -d
-                        else
-                          echo "Postgres container already running."
+                          echo "RabbitMQ + postgres container already running."
                         fi
 
 
-                        docker compose -f docker-compose.yml up -d --force-recreate
+                        docker-compose -f docker-compose.yml up -d --force-recreate
 
                     """
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    echo "Pushing image ..."
+                    withCredentials([string(credentialsId: 'docker', variable: 'DOCKER_PASSWORD')]) {
+                        sh """
+                        echo \$DOCKER_PASSWORD | docker login -u 1190990 --password-stdin &&
+                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_REPO}:${IMAGE_TAG} &&
+                        docker push ${DOCKER_REPO}:${IMAGE_TAG}
+                        """
+                    }
                 }
             }
         }
