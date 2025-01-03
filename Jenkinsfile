@@ -6,9 +6,9 @@ pipeline {
         //MAVEN_HOME = '/opt/homebrew' // (MacOS)
         MAVEN_HOME = '/usr/share/maven' // (Ubuntu)
 
-        GIT_REPO_URL = 'https://nunopsilva@bitbucket.org/nunopsilva/lms-books.git'  // Your Git repository URL
-        GIT_BRANCH = 'master'  // Specify the branch to check out
-        CREDENTIALS_ID = 'user_app_password_para_bitbucket'  // Credentials ID for authentication
+        GIT_REPO_URL = 'https://github.com/ricardopereira87/ODSOFT_P2_1190990_LMSBooks'  // Your Git repository URL
+        GIT_BRANCH = 'main'  // Specify the branch to check out
+        CREDENTIALS_ID = 'x'  // Credentials ID for authentication
 
         SERVER_PORT = '2226'
 
