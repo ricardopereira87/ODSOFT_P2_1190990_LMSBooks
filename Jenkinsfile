@@ -7,6 +7,7 @@ pipeline {
 
         GIT_REPO_URL = 'https://github.com/ricardopereira87/ODSOFT_P2_1190990_LMSBooks'  // Your Git repository URL
         GIT_BRANCH = 'main'  // Specify the branch to check out
+        GIT_BRANCH_PRE = 'preprod'  // Specify the branch to check out
         //CREDENTIALS_ID = 'x'  // Credentials ID for authentication
 
         SERVER_PORT = '2226'
@@ -32,10 +33,17 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                // Step to clone the Git repository
-                git branch: "${GIT_BRANCH}",
+                if env.GIT_BRANCH == 'main' {
+                    git branch: "${GIT_BRANCH}",
                     url: "${GIT_REPO_URL}"//,
                     //credentialsId: "${CREDENTIALS_ID}"
+                } else {
+                    git branch: "${GIT_BRANCH_PRE}",
+                    url: "${GIT_REPO_URL}"//,
+                    //credentialsId: "${CREDENTIALS_ID}"
+                }
+                // Step to clone the Git repository
+                
             }
         }
 
