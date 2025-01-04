@@ -14,18 +14,28 @@ pipeline {
 
         IMAGE_NAME = 'lmsbooks'
         IMAGE_TAG = 'latest'
+
+        ENVIRONMENT = sh(script: 'echo $ENVIRONMENT', returnStdout: true).trim()
+
     }
 
     stages {
 
-        stage('Get Branch Name') {
+        stage('Determine Branch') {
             steps {
                 script {
-                    // Get the current branch name
-                    def branchName = env.GIT_BRANCH
-
-                    // Output the branch name
-                    echo "Current branch: ${branchName}"
+                    // Define the branch based on the environment
+                    def branch
+                    if (ENVIRONMENT == 'preproduction') {
+                        branch = 'preprod'
+                    } else if (ENVIRONMENT == 'production') {
+                        branch = 'main'
+                    } else {
+                        error "Unknown environment: ${ENVIRONMENT}"
+                    }
+                    
+                    // Set the branch variable for use in later stages
+                    echo "Branch to be used: ${branch}"
                 }
             }
         }
@@ -46,22 +56,23 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    if (env.GIT_BRANCH == 'main') {
-                        git branch: "${GIT_BRANCH}",
+                    if (branch == 'main') {
+                        git branch: "${branch}",
                             url: "${GIT_REPO_URL}"
-                    } else if (env.GIT_BRANCH == 'preprod') {
-                        git branch: "${GIT_BRANCH_PRE}",
+                    } else if (branch == 'preprod') {
+                        git branch: "${branch}",
                             url: "${GIT_REPO_URL}"
                     }
                 }
             }
         }
 
-
         stage('Clean') {
             steps {
                 script {
-                    sh "mvn clean install"
+                    sh """
+                        mvn clean install
+                    """
                 }
             }
         }
@@ -85,9 +96,9 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    if (env.GIT_BRANCH == 'main') {
+                    if (branch == 'main') {
                         echo "Tests were performed in preprod stage"
-                    } else if (env.GIT_BRANCH == 'preprod') {
+                    } else if (branch == 'preprod') {
                         sh "mvn test"
                     }
                 }
@@ -119,6 +130,7 @@ pipeline {
             }
         }
 
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -133,8 +145,8 @@ pipeline {
         stage('Deploy with Docker Compose') {
             steps {
                 script {
-
-                    if (env.GIT_BRANCH == 'main') {
+                    
+                    if (branch == 'main') {
                     sh """
 
                         if ! docker ps --filter "name=rabbitmq_in_lms_network" --format '{{.Names}}' | grep -q rabbitmq_in_lms_network; then
@@ -147,10 +159,9 @@ pipeline {
                         docker-compose -f docker-compose.yml up -d --force-recreate
 
                     """
-                    } else if (env.GIT_BRANCH == 'preprod') {
+                    } else if (branch == 'preprod') {
                        echo "Deploy is done in prod..."
                     }
-
                 }
             }
         }
