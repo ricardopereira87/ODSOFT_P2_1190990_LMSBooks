@@ -36,12 +36,10 @@ pipeline {
                 script {
                     if (env.GIT_BRANCH == 'main') {
                         git branch: "${GIT_BRANCH}",
-                            url: "${GIT_REPO_URL}"//,
-                            //credentialsId: "${CREDENTIALS_ID}"
+                            url: "${GIT_REPO_URL}"
                     } else if (env.GIT_BRANCH == 'preprod') {
                         git branch: "${GIT_BRANCH_PRE}",
-                            url: "${GIT_REPO_URL}"//,
-                            //credentialsId: "${CREDENTIALS_ID}"
+                            url: "${GIT_REPO_URL}"
                     }
                 }
             }
@@ -51,7 +49,7 @@ pipeline {
         stage('Clean') {
             steps {
                 script {
-                    sh "mvn clean install"
+                    sh "mvn clean install -DskipTests"
                 }
             }
         }
@@ -75,10 +73,11 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    // Run tests
-                    //withEnv(["PATH+JDK=${JAVA_HOME}/bin"]) {
+                    if (env.GIT_BRANCH == 'main') {
+                        echo "Tests were performed in preprod stage"
+                    } else if (env.GIT_BRANCH == 'preprod') {
                         sh "mvn test"
-                    //}
+                    }
                 }
             }
         }
