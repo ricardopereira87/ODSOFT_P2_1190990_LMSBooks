@@ -18,6 +18,18 @@ pipeline {
 
     stages {
 
+        stage('Get Branch Name') {
+            steps {
+                script {
+                    // Get the current branch name
+                    def branchName = env.GIT_BRANCH
+
+                    // Output the branch name
+                    echo "Current branch: ${branchName}"
+                }
+            }
+        }
+
         stage('Debug Environment') {
             steps {
                 sh 'env'
