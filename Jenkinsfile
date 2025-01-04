@@ -33,19 +33,20 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                if (env.GIT_BRANCH == 'main') {
-                    git branch: "${GIT_BRANCH}",
-                    url: "${GIT_REPO_URL}"//,
-                    //credentialsId: "${CREDENTIALS_ID}"
-                } else if (env.GIT_BRANCH == 'preprod') {
-                    git branch: "${GIT_BRANCH_PRE}",
-                    url: "${GIT_REPO_URL}"//,
-                    //credentialsId: "${CREDENTIALS_ID}"
+                script {
+                    if (env.GIT_BRANCH == 'main') {
+                        git branch: "${GIT_BRANCH}",
+                            url: "${GIT_REPO_URL}"//,
+                            //credentialsId: "${CREDENTIALS_ID}"
+                    } else if (env.GIT_BRANCH == 'preprod') {
+                        git branch: "${GIT_BRANCH_PRE}",
+                            url: "${GIT_REPO_URL}"//,
+                            //credentialsId: "${CREDENTIALS_ID}"
+                    }
                 }
-                // Step to clone the Git repository
-                
             }
         }
+
 
         stage('Clean') {
             steps {
