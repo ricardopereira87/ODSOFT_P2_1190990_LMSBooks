@@ -139,6 +139,7 @@ pipeline {
                        echo "Deploy is done in prod..."
                     }
 
+                }
             }
         }
 
@@ -157,7 +158,7 @@ pipeline {
             }
         }
     }
-
+    
     post {
         success {
             echo 'Pipeline completed successfully!!'
