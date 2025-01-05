@@ -58,11 +58,11 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    if (branch == 'main') {
-                        git branch: "${branch}",
+                    if (env.BRANCH == 'main') {
+                        git branch: "${env.BRANCH}",
                             url: "${GIT_REPO_URL}"
-                    } else if (branch == 'preprod') {
-                        git branch: "${branch}",
+                    } else if (env.BRANCH == 'preprod') {
+                        git branch: "${env.BRANCH}",
                             url: "${GIT_REPO_URL}"
                     }
                 }
@@ -98,9 +98,9 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                    if (branch == 'main') {
+                    if (env.BRANCH == 'main') {
                         echo "Tests were performed in preprod stage"
-                    } else if (branch == 'preprod') {
+                    } else if (env.BRANCH == 'preprod') {
                         sh "mvn test"
                     }
                 }
@@ -148,7 +148,7 @@ pipeline {
             steps {
                 script {
                     
-                    if (branch == 'main') {
+                    if (env.BRANCH == 'main') {
                     sh """
 
                         if ! docker ps --filter "name=rabbitmq_in_lms_network" --format '{{.Names}}' | grep -q rabbitmq_in_lms_network; then
@@ -161,7 +161,7 @@ pipeline {
                         docker-compose -f docker-compose.yml up -d --force-recreate
 
                     """
-                    } else if (branch == 'preprod') {
+                    } else if (env.BRANCH == 'preprod') {
                        echo "Deploy is done in prod..."
                     }
                 }
