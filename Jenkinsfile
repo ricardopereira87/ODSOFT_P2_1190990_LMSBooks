@@ -211,7 +211,7 @@ pipeline {
                 }
             }
             steps {
-                input message: 'Approve merge of preprod into main?', ok: 'Yes, Merge', cancel: 'No, Abort'
+                input message: 'Approve merge of preprod into main?', ok: 'Yes, Merge'
             }
         }
 
