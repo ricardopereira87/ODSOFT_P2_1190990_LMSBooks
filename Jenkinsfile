@@ -198,7 +198,7 @@ pipeline {
                     emailext (
                         subject: 'Preprod Deployment Successful - Approval Needed for Merge',
                         body: 'The preprod deployment has been successful. Please confirm to merge preprod into main.',
-                        to: '1190990@isep.ipp.pt'  // Replace with the admin's email
+                        to: '1190990@isep.ipp.pt' 
                     )
                 }
             }
