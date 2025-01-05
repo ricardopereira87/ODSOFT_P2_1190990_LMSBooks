@@ -157,7 +157,12 @@ pipeline {
 
                         // Wait for Blue containers to become healthy
                         waitUntil {
-                            def containerStatus = sh(script: "docker inspect --format='{{.State.Health.Status}}' ${IMAGE_NAME}_blue_in_lms_network", returnStdout: true).trim()
+                            // Dynamically fetch the container name
+                            def containerName = sh(script: "docker ps -q --filter 'name=books_blue_in_lms_network' --format '{{.Names}}'", returnStdout: true).trim()
+                            echo "Waiting for container ${containerName} to become healthy"
+
+                            // Wait for the container to be healthy
+                            def containerStatus = sh(script: "docker inspect --format='{{.State.Health.Status}}' ${containerName}", returnStdout: true).trim()
                             return containerStatus == 'healthy'
                         }
 
