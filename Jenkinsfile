@@ -168,6 +168,37 @@ pipeline {
             }
         }
 
+        stage('Verify Deployment') {
+            steps {
+                script {
+                    
+                    if (env.BRANCH == 'main') {
+                        echo "Verifying deployment on 'main' branch..."
+
+                        // Check if the container is running
+                        def containerStatus = sh(script: "docker ps --filter 'name=${IMAGE_NAME}' --format '{{.Status}}'", returnStdout: true).trim()
+                        echo "Container Status: ${containerStatus}"
+
+                        // If the container is not running or in an error state, perform rollback
+                        if (containerStatus ==~ /.*Exited.*/) {
+                            echo "Container failed on 'main' branch. Rolling back..."
+                            sh """
+                                docker tag ${IMAGE_NAME}:rollback ${IMAGE_NAME}:${IMAGE_TAG}
+                                docker-compose -f docker-compose.yml up -d --force-recreate
+                            """
+                            error "Deployment failed on 'main'. Rolled back to the previous image."
+                        } else {
+                            echo "Container is running fine on 'main'."
+                        }
+                    } else if (env.BRANCH == 'preprod') {
+                        echo "Skipping rollback check for 'preprod' branch."
+                    } else {
+                        error "Unknown branch: ${env.BRANCH}. No rollback performed."
+                    }
+                }
+            }
+        }
+
         stage('Push Docker Image') {
             steps {
                 script {
