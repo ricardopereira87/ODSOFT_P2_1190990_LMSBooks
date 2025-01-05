@@ -144,41 +144,29 @@ pipeline {
         }
 
 
-        stage('Blue-Green Deployment with Docker Compose') {
+        stage('Deploy with Docker Compose') {
             steps {
                 script {
+                    
                     if (env.BRANCH == 'main') {
-                        echo "Performing Blue-Green Deployment..."
+                    sh """
 
-                        // Create new containers (Blue) while keeping old ones (Green) running
-                        sh """
-                            docker-compose -f docker-compose.yml -p blue up -d --force-recreate --no-deps
-                        """
+                        if ! docker ps --filter "name=rabbitmq_in_lms_network" --format '{{.Names}}' | grep -q rabbitmq_in_lms_network; then
+                          docker-compose -f docker-compose-rabbitmq+postgres.yml up -d
+                        else
+                          echo "RabbitMQ + postgres container already running."
+                        fi
 
-                        // Wait for Blue containers to become healthy
-                        waitUntil {
-                            // Dynamically fetch the container name
-                            def containerName = sh(script: "docker ps -q --filter 'name=books_blue_in_lms_network' --format '{{.Names}}'", returnStdout: true).trim()
-                            echo "Waiting for container ${containerName} to become healthy"
 
-                            // Wait for the container to be healthy
-                            def containerStatus = sh(script: "docker inspect --format='{{.State.Health.Status}}' ${containerName}", returnStdout: true).trim()
-                            return containerStatus == 'healthy'
-                        }
+                        docker-compose -f docker-compose.yml up -d --force-recreate
 
-                        // Once new containers are healthy, stop the old containers (Green)
-                        sh """
-                            docker-compose -f docker-compose.yml -p green stop
-                        """
-
-                        echo "Blue-Green Deployment successful!"
+                    """
                     } else if (env.BRANCH == 'preprod') {
-                        echo "Preprod deployment done in main branch."
+                       echo "Deploy is done in prod..."
                     }
                 }
             }
         }
-
 
         stage('Verify Deployment') {
             steps {
