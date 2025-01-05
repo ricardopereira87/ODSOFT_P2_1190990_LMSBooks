@@ -185,6 +185,56 @@ pipeline {
             }
         }
 
+
+        stage('Notify Admin for Approval') {
+            when {
+                expression {
+                    env.BRANCH == 'preprod'
+                }
+            }
+            steps {
+                script {
+                    echo "Sending email notification to admin for branch: ${env.BRANCH}..."
+                    emailext (
+                        subject: 'Preprod Deployment Successful - Approval Needed for Merge',
+                        body: 'The preprod deployment has been successful. Please confirm to merge preprod into main.',
+                        to: '1190990@isep.ipp.pt'  // Replace with the admin's email
+                    )
+                }
+            }
+        }
+
+        stage('Wait for Admin Confirmation') {
+            when {
+                expression {
+                    env.BRANCH == 'preprod'
+                }
+            }
+            steps {
+                input message: 'Approve merge of preprod into main?', ok: 'Yes, Merge', cancel: 'No, Abort'
+            }
+        }
+
+        stage('Merge Preprod into Main') {
+            when {
+                expression {
+                    env.BRANCH == 'preprod'
+                }
+            }
+            steps {
+                script {
+                    echo "Merging 'preprod' into main..."
+                    sh """
+                    git checkout main
+                    git pull origin main
+                    git merge origin/preprod
+                    git push origin main
+                    """
+                }
+            }
+        }
+    }
+
         
 
     }
