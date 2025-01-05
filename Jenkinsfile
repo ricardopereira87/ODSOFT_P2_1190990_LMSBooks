@@ -144,29 +144,36 @@ pipeline {
         }
 
 
-        stage('Deploy with Docker Compose') {
+        stage('Blue-Green Deployment with Docker Compose') {
             steps {
                 script {
-                    
                     if (env.BRANCH == 'main') {
-                    sh """
+                        echo "Performing Blue-Green Deployment..."
 
-                        if ! docker ps --filter "name=rabbitmq_in_lms_network" --format '{{.Names}}' | grep -q rabbitmq_in_lms_network; then
-                          docker-compose -f docker-compose-rabbitmq+postgres.yml up -d
-                        else
-                          echo "RabbitMQ + postgres container already running."
-                        fi
+                        // Create new containers (Blue) while keeping old ones (Green) running
+                        sh """
+                            docker-compose -f docker-compose.yml -p blue up -d --force-recreate --no-deps
+                        """
 
+                        // Wait for Blue containers to become healthy
+                        waitUntil {
+                            def containerStatus = sh(script: "docker inspect --format='{{.State.Health.Status}}' ${IMAGE_NAME}_blue_in_lms_network", returnStdout: true).trim()
+                            return containerStatus == 'healthy'
+                        }
 
-                        docker-compose -f docker-compose.yml up -d --force-recreate
+                        // Once new containers are healthy, stop the old containers (Green)
+                        sh """
+                            docker-compose -f docker-compose.yml -p green stop
+                        """
 
-                    """
+                        echo "Blue-Green Deployment successful!"
                     } else if (env.BRANCH == 'preprod') {
-                       echo "Deploy is done in prod..."
+                        echo "Preprod deployment done in main branch."
                     }
                 }
             }
         }
+
 
         stage('Verify Deployment') {
             steps {
