@@ -224,12 +224,15 @@ pipeline {
             steps {
                 script {
                     echo "Merging 'preprod' into main..."
-                    sh """
-                    git checkout main
-                    git pull origin main
-                    git merge origin/preprod
-                    git push origin main
-                    """
+                    sshagent(['github-ssh']) {
+                        sh """
+                        git remote set-url origin git@github.com:ricardopereira87/ODSOFT_P2_1190990_LMSBooks.git
+                        git checkout main
+                        git pull origin main
+                        git merge origin/preprod
+                        git push origin main
+                        """
+                    }
                 }
             }
         }
