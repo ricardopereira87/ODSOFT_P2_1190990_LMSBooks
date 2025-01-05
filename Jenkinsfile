@@ -171,6 +171,8 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
+                        
+
                     echo "Pushing image ..."
                     withCredentials([string(credentialsId: 'docker', variable: 'DOCKER_PASSWORD')]) {
                         sh """
@@ -183,38 +185,7 @@ pipeline {
             }
         }
 
-        stage('Notify Admin for Approval') {
-            steps {
-                script {
-                    // Send an email notification to the admin
-                    emailext (
-                        subject: 'Preprod Deployment Successful - Approval Needed for Merge',
-                        body: 'The preprod deployment has been successful. Please confirm to merge preprod into main.',
-                        to: '1190990@isep.ipp.pt'  // Replace with the admin's email
-                    )
-                }
-            }
-        }
-
-        stage('Wait for Admin Confirmation') {
-            steps {
-                input message: 'Approve merge of preprod into main?', ok: 'Yes, Merge', cancel: 'No, Abort'
-            }
-        }
-
-        stage('Merge Preprod into Main') {
-            steps {
-                script {
-                    // Merge preprod into main branch using Git
-                    sh """
-                    git checkout main
-                    git pull origin main
-                    git merge origin/preprod
-                    git push origin main
-                    """
-                }
-            }
-        }
+        
 
     }
     
